@@ -1,3 +1,5 @@
+import type { InputClassification } from '@/core/capture/dom/sensitive';
+
 import type { VoiceProvider } from '@/core/capture/voice/transcribe';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 
@@ -30,6 +32,8 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  /** How the captured field was classified. Secret fields never carry an inputValue. */
+  inputClassification?: InputClassification;
   descriptionSource?: DescriptionSource;
   aiPending?: boolean;
   blockType?: BlockType;

@@ -1,4 +1,5 @@
 import type { DOMContext } from '@/core/capture/dom/context';
+import type { InputClassification } from '@/core/capture/dom/sensitive';
 import { CaptureState } from '@/core/capture/machine';
 import { buildFallbackDescription } from '@/core/capture/step-description';
 import { db } from '@/core/guides/db';
@@ -113,11 +114,25 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
   return { stepId };
 }
 
-export async function handleUpdateInputStep(stepId: string, description: string, inputValue?: string) {
+export async function handleUpdateInputStep(
+  stepId: string,
+  description: string,
+  inputValue?: string,
+  inputClassification?: InputClassification,
+) {
   await updateStepDescription(stepId, description);
-  if (inputValue !== undefined) {
-    await db.steps.update(stepId, { inputValue });
+
+  if (inputClassification === 'secret') {
+    // Defence in depth: a secret must not survive here even if an earlier keystroke on the same
+    // step was classified public (type-then-reveal, or a field relabelled mid-entry).
+    await db.steps.update(stepId, { inputValue: undefined, inputClassification });
+    return;
   }
+
+  const updates: Partial<Step> = {};
+  if (inputValue !== undefined) updates.inputValue = inputValue;
+  if (inputClassification) updates.inputClassification = inputClassification;
+  if (Object.keys(updates).length > 0) await db.steps.update(stepId, updates);
 }
 
 export async function handleFinalizeInputStep(

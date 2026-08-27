@@ -1,5 +1,6 @@
 import { getCssSelector } from 'css-selector-generator';
 import type { ElementMeta } from '@/core/guides/types';
+import { isSensitiveField } from './sensitive';
 
 function getCleanText(el: HTMLElement): string | null {
   const clone = el.cloneNode(true) as HTMLElement;
@@ -46,7 +47,8 @@ export function extractElementMeta(el: HTMLElement, atEvent?: FrozenRect): Eleme
   return {
     tag: el.tagName?.toLowerCase() ?? 'unknown',
     cssSelector,
-    textContent: getCleanText(el),
+    // A contenteditable secret's text IS its value, so it must not become element metadata.
+    textContent: isSensitiveField(el) ? null : getCleanText(el),
     ariaLabel: el.getAttribute('aria-label'),
     placeholder: el.getAttribute('placeholder'),
     altText: el instanceof HTMLImageElement ? el.alt : null,

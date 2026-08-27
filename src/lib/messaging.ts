@@ -1,5 +1,6 @@
 import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { DOMContext } from '@/core/capture/dom/context';
+import type { InputClassification } from '@/core/capture/dom/sensitive';
 import type { CaptureStateValue } from '@/core/capture/machine';
 import type { ElementMeta } from '@/core/guides/types';
 
@@ -38,6 +39,7 @@ export interface UpdateInputStepData {
   stepId: string;
   description: string;
   inputValue?: string;
+  inputClassification?: InputClassification;
 }
 
 export interface UpdateInputStepResponse {

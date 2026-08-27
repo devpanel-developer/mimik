@@ -1,3 +1,5 @@
+import { isSensitiveField, safeContextValue } from './sensitive';
+
 export interface SiblingElement {
   tag: string;
   role: string | null;
@@ -71,7 +73,7 @@ function getAccessibleName(el: Element): string | null {
     (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement
       ? getLabelForInput(el)
       : null) ??
-    ((el.textContent?.trim()?.length ?? 0) <= 80 ? el.textContent?.trim() || null : null) ??
+    (!isSensitiveField(el) && (el.textContent?.trim()?.length ?? 0) <= 80 ? el.textContent?.trim() || null : null) ??
     attr(el, 'title') ??
     attr(el, 'placeholder')
   );
@@ -80,7 +82,8 @@ function getAccessibleName(el: Element): string | null {
 function getElementValue(el: Element): string | null {
   if (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio'))
     return el.checked ? 'checked' : 'unchecked';
-  if (el instanceof HTMLInputElement && el.type === 'password') return '***';
+  const redacted = safeContextValue(el);
+  if (redacted) return redacted;
   if (el instanceof HTMLInputElement && el.value) return `value=${el.value.slice(0, 50)}`;
   if (el instanceof HTMLTextAreaElement && el.value) return `value=${el.value.slice(0, 50)}`;
   if (el instanceof HTMLSelectElement && el.selectedOptions.length)

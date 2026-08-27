@@ -2,7 +2,8 @@ import { logger } from '@/lib/logger';
 import { sendMessage } from '@/lib/messaging';
 import { extractDOMContext } from '../dom/context';
 import { extractElementMeta, type FrozenRect, freezeRect } from '../dom/element-meta';
-import { getFieldLabel, getFieldValue } from '../dom/element-utils';
+import { getFieldLabel } from '../dom/element-utils';
+import { classifyField } from '../dom/sensitive';
 
 export class InputSession {
   stepId: string | null = null;
@@ -36,11 +37,23 @@ export class InputSession {
   update(target: HTMLElement) {
     if (!this.stepId) return;
     this.atEvent = freezeRect(target);
-    const val = getFieldValue(target);
-    const desc = val ? `Type "${val}" in ${getFieldLabel(target)}` : `Clear ${getFieldLabel(target)}`;
-    sendMessage('updateInputStep', { stepId: this.stepId, description: desc, inputValue: val || undefined }).catch(
-      (err) => logger.warn('Failed to update input step', err),
-    );
+    const label = getFieldLabel(target);
+    const field = classifyField(target);
+
+    // A secret never leaves the page: no literal in the description, and no inputValue persisted.
+    const description =
+      field.classification === 'secret'
+        ? `Type ${field.displayToken} in ${label}`
+        : field.value
+          ? `Type "${field.value}" in ${label}`
+          : `Clear ${label}`;
+
+    sendMessage('updateInputStep', {
+      stepId: this.stepId,
+      description,
+      inputValue: field.value || undefined,
+      inputClassification: field.classification,
+    }).catch((err) => logger.warn('Failed to update input step', err));
   }
 
   async finalize() {

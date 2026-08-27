@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Acme Cloud — capture fixture</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem; }
+      section { border: 1px solid #ccc; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
+      label { display: block; margin: .5rem 0; }
+      input, textarea { display: block; width: 100%; padding: .4rem; }
+      [hidden] { display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Acme Cloud</h1>
+
+    <!--
+      Deterministic capture fixture. Every field here exists to exercise one classification
+      path in src/core/capture/dom/sensitive.ts. Values typed into the "secret" section must
+      never appear in a guide, a step description, an export, or a model prompt.
+    -->
+
+    <section id="sign-in">
+      <h2>Sign in</h2>
+      <label>Email <input type="email" name="email" autocomplete="username" /></label>
+      <label>Password <input type="password" name="password" autocomplete="current-password" /></label>
+      <button type="button" data-testid="sign-in">Sign in</button>
+    </section>
+
+    <section id="credentials">
+      <h2>Credentials</h2>
+      <label>API Key <input type="text" name="api_key" placeholder="API key" /></label>
+      <label>Access Token <input type="text" name="access_token" /></label>
+      <label>One-time code <input type="text" autocomplete="one-time-code" /></label>
+      <label>Private Key <textarea name="private_key" rows="3"></textarea></label>
+      <label>Vendor secret <span data-mimik-sensitive><input type="text" name="vendor_field" /></span></label>
+    </section>
+
+    <section id="application">
+      <h2>Create application</h2>
+      <label>Application name <input type="text" name="application_name" /></label>
+      <label>Notes <textarea name="notes" rows="2"></textarea></label>
+      <label>Description <div contenteditable="true" data-testid="description"></div></label>
+      <label>Environment
+        <select name="environment">
+          <option>development</option>
+          <option>production</option>
+        </select>
+      </label>
+      <label><input type="checkbox" name="copy_database" /> Copy database</label>
+      <button type="button" data-testid="create-application">Create</button>
+    </section>
+
+    <section id="result" hidden>
+      <h2>Application created</h2>
+      <p data-testid="result-message">Your application is ready.</p>
+    </section>
+
+    <script>
+      // Minimal state transition so before/after evidence has something real to observe.
+      document.querySelector('[data-testid="create-application"]').addEventListener('click', () => {
+        document.getElementById('result').hidden = false;
+      });
+    </script>
+  </body>
+</html>

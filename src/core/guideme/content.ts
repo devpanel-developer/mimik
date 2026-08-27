@@ -14,6 +14,7 @@ export class GuideMeController {
   private overlay: GuideMeOverlay | null = null;
   private storageListener: ((changes: Record<string, { newValue?: unknown }>) => void) | null = null;
   private clickHandler: ((e: Event) => void) | null = null;
+  private secretInputHandler: ((e: Event) => void) | null = null;
   private currentTarget: HTMLElement | null = null;
   private currentStepIndex = -1;
   private watchTimer: ReturnType<typeof setInterval> | null = null;
@@ -108,6 +109,15 @@ export class GuideMeController {
   private setupActionDetection(step: Step, target: HTMLElement) {
     this.currentTarget = target;
 
+    if (step.action === 'input' && step.inputClassification === 'secret') {
+      // Never type a recorded credential into a live page. The reader supplies their own value;
+      // advance only once they have actually entered something.
+      const onSecretInput = () => this.advanceStep();
+      this.secretInputHandler = onSecretInput;
+      target.addEventListener('input', onSecretInput, { once: true });
+      return;
+    }
+
     if (step.action === 'input' && step.inputValue) {
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
         const proto =
@@ -138,7 +148,11 @@ export class GuideMeController {
     if (this.clickHandler && this.currentTarget) {
       this.currentTarget.removeEventListener('click', this.clickHandler);
     }
+    if (this.secretInputHandler && this.currentTarget) {
+      this.currentTarget.removeEventListener('input', this.secretInputHandler);
+    }
     this.clickHandler = null;
+    this.secretInputHandler = null;
     this.currentTarget = null;
   }
 
