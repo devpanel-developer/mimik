@@ -78,6 +78,10 @@ export function onTabUpdated(
   browser.tabs.onUpdated.addListener(handler);
 }
 
+export function onTabRemoved(handler: (tabId: number) => void): void {
+  browser.tabs.onRemoved.addListener(handler);
+}
+
 export function getAllWindows(): Promise<Browser.windows.Window[]> {
   return browser.windows.getAll({ populate: true });
 }

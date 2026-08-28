@@ -54,6 +54,7 @@ export class InputSession {
       description,
       inputValue: field.value || undefined,
       inputClassification: field.classification,
+      inputDisplayToken: field.displayToken ?? undefined,
     }).catch((err) => logger.warn('Failed to update input step', err));
   }
 

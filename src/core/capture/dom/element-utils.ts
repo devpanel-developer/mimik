@@ -45,6 +45,12 @@ export function isMimikElement(el: Element): boolean {
   return !!el.closest('[data-mimik-ignore]');
 }
 
+/**
+ * Reads a field's literal value with no classification.
+ *
+ * Callers that persist, export, or transmit the result must go through `classifyField()` in
+ * `./sensitive` instead — this returns credentials verbatim.
+ */
 export function getFieldValue(el: HTMLElement): string {
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value;
   if (el.isContentEditable) return el.textContent?.trim() ?? '';

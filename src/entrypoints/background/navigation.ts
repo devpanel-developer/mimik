@@ -4,13 +4,14 @@ import {
   onHistoryStateUpdated,
   onNavigationCompleted,
   onTabActivated,
+  onTabRemoved,
   onTabUpdated,
   sendMessageToTab,
 } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import { TabMessage } from '@/lib/tab-messages';
 import { getActor, waitUntilReady } from './actor';
-import { recordNavigation } from './browser-context';
+import { forgetTab, recordNavigation } from './browser-context';
 import { injectContentScript, isInjectableTab } from './tab-manager';
 
 export function registerNavigationListeners() {
@@ -54,6 +55,10 @@ export function registerNavigationListeners() {
         }
       } catch {}
     }
+  });
+
+  onTabRemoved((tabId) => {
+    forgetTab(tabId);
   });
 
   onTabUpdated(async (tabId, changeInfo, tab) => {

@@ -11,6 +11,7 @@ interface UpdatePayload {
   description: string;
   inputValue?: string;
   inputClassification?: string;
+  inputDisplayToken?: string;
 }
 
 /** Drive a real InputSession over a field and return the persisted update payload. */
@@ -62,6 +63,11 @@ describe('InputSession secret handling', () => {
   it('describes a secret with a placeholder token instead of the value', async () => {
     const payload = await captureUpdate('<input data-subject type="password" aria-label="Admin Password">', 's3cr3t');
     expect(payload.description).toBe('Type <ADMIN_PASSWORD> in Admin Password');
+  });
+
+  it('sends the display token as its own field, not only inside prose', async () => {
+    const payload = await captureUpdate('<input data-subject type="password" aria-label="Admin Password">', 's3cr3t');
+    expect(payload.inputDisplayToken).toBe('<ADMIN_PASSWORD>');
   });
 
   it('sends no secret anywhere in the whole message stream', async () => {

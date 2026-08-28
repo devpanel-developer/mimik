@@ -42,6 +42,7 @@ export interface UpdateInputStepData {
   description: string;
   inputValue?: string;
   inputClassification?: InputClassification;
+  inputDisplayToken?: string;
 }
 
 export interface UpdateInputStepResponse {

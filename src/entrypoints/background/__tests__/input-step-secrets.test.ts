@@ -74,6 +74,21 @@ describe('handleUpdateInputStep', () => {
     expect(JSON.stringify(await db.steps.toArray())).not.toContain(SECRET);
   });
 
+  it('stores the display token so the placeholder survives beyond the description', async () => {
+    await seedStep();
+    await handleUpdateInputStep(
+      'step-1',
+      'Type <ADMIN_PASSWORD> in Admin Password',
+      undefined,
+      'secret',
+      '<ADMIN_PASSWORD>',
+    );
+
+    const step = await db.steps.get('step-1');
+    expect(step?.inputDisplayToken).toBe('<ADMIN_PASSWORD>');
+    expect(step?.inputValue).toBeUndefined();
+  });
+
   it('still stores an ordinary value', async () => {
     await seedStep();
     await handleUpdateInputStep('step-1', 'Type "ada@example.com" in Email', 'ada@example.com', 'public');

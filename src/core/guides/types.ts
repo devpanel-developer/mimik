@@ -48,6 +48,8 @@ export interface Step {
   browserContext?: StepBrowserContext;
   /** How the captured field was classified. Secret fields never carry an inputValue. */
   inputClassification?: InputClassification;
+  /** Stand-in for a secret value, e.g. `<ADMIN_PASSWORD>`. Never the value itself. */
+  inputDisplayToken?: string;
   descriptionSource?: DescriptionSource;
   aiPending?: boolean;
   blockType?: BlockType;

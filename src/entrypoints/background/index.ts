@@ -195,7 +195,13 @@ export default defineBackground(() => {
 
   onMessage('updateInputStep', async ({ data }) => {
     await waitUntilReady();
-    await handleUpdateInputStep(data.stepId, data.description, data.inputValue, data.inputClassification);
+    await handleUpdateInputStep(
+      data.stepId,
+      data.description,
+      data.inputValue,
+      data.inputClassification,
+      data.inputDisplayToken,
+    );
     return { updated: true };
   });
 

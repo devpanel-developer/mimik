@@ -124,13 +124,14 @@ export async function handleUpdateInputStep(
   description: string,
   inputValue?: string,
   inputClassification?: InputClassification,
+  inputDisplayToken?: string,
 ) {
   await updateStepDescription(stepId, description);
 
   if (inputClassification === 'secret') {
     // Defence in depth: a secret must not survive here even if an earlier keystroke on the same
     // step was classified public (type-then-reveal, or a field relabelled mid-entry).
-    await db.steps.update(stepId, { inputValue: undefined, inputClassification });
+    await db.steps.update(stepId, { inputValue: undefined, inputClassification, inputDisplayToken });
     return;
   }
 
