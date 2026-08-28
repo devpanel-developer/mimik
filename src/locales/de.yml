@@ -327,6 +327,7 @@ exportMenu:
   html: HTML
   markdown: Markdown
   pdf: PDF
+  rawCapture: JSON
   video: Video
   cancelProgress: "Abbrechen · $1 %"
 

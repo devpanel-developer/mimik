@@ -396,6 +396,7 @@ exportMenu:
   html: HTML
   markdown: Markdown
   pdf: PDF
+  rawCapture: JSON
   video: Vídeo
   cancelProgress: "Cancelar · $1 %"
 

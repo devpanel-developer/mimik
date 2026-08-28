@@ -2,7 +2,7 @@ import { defineExtensionMessaging } from '@webext-core/messaging';
 import type { DOMContext } from '@/core/capture/dom/context';
 import type { InputClassification } from '@/core/capture/dom/sensitive';
 import type { CaptureStateValue } from '@/core/capture/machine';
-import type { ElementMeta } from '@/core/guides/types';
+import type { CaptureTiming, ElementMeta } from '@/core/guides/types';
 
 export interface GetStateResponse {
   state: CaptureStateValue;
@@ -33,6 +33,8 @@ export interface CaptureStepData {
   domContext?: DOMContext;
   /** location.href of the frame at the moment of the event. */
   eventUrl?: string;
+  /** Whether capture ran before the page could react to the action. */
+  captureTiming?: CaptureTiming;
 }
 
 export type CaptureStepResponse = { stepId: string } | { ignored: true } | { error: string };

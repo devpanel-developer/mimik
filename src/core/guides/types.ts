@@ -15,6 +15,15 @@ export interface Guide {
   staging?: boolean;
 }
 
+/**
+ * When a step's screenshot was taken relative to the action.
+ *
+ * The recorder knows this: an intercepted click is captured before the page reacts, while an
+ * unintercepted one is captured after it already has. Recording the fact means evidence can
+ * be given a truthful before/after role later, instead of one being guessed.
+ */
+export type CaptureTiming = 'before-action' | 'after-action';
+
 export type DescriptionSource = 'narration' | 'ai' | 'heuristic';
 
 export type BlockType = 'heading' | 'callout';
@@ -44,6 +53,8 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  /** When the screenshot was taken relative to the action. */
+  captureTiming?: CaptureTiming;
   /** Authoritative per-event browser context; absent on recordings made before WP-03. */
   browserContext?: StepBrowserContext;
   /** How the captured field was classified. Secret fields never carry an inputValue. */
@@ -102,6 +113,27 @@ export interface ElementMeta {
   rect: { x: number; y: number; width: number; height: number };
   devicePixelRatio: number;
   clickPoint?: { x: number; y: number };
+}
+
+/**
+ * What the trainer actually said, kept as evidence in its own right.
+ *
+ * A step's `description` may be rewritten by AI or by a human editor. This record is not:
+ * it is the utterance, with the timing and provider that produced it. Compiled explanation and
+ * original narration must both survive, or provenance is lost the first time prose is polished.
+ */
+export interface NarrationSegment {
+  id: string;
+  guideId: string;
+  /** The step this utterance was attributed to, or null when it could not be placed. */
+  stepId: string | null;
+  rawText: string;
+  startMs: number | null;
+  endMs: number | null;
+  transcriptionProvider?: string;
+  transcriptionModel?: string;
+  language?: string;
+  createdAt: number;
 }
 
 export interface Snapshot {

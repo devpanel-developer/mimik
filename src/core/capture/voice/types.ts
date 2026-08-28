@@ -67,7 +67,22 @@ export interface NarrationStats {
   rejectedSegments: number;
 }
 
+/**
+ * One stretch of what the trainer actually said, still attached to its timing.
+ *
+ * The joined `descriptions` below are an interpretation for display; these are the evidence.
+ * Keeping both means a later compiler can re-read the trainer's words rather than parse prose
+ * back out of a generated description.
+ */
+export interface AttributedSegment {
+  stepId: string;
+  rawText: string;
+  startSec: number;
+  endSec: number;
+}
+
 export interface NarrationResult {
   descriptions: Array<{ stepId: string; text: string }>;
+  segments?: AttributedSegment[];
   stats: NarrationStats;
 }

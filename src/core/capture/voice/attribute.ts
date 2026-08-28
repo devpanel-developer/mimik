@@ -1,6 +1,7 @@
 import { rejectReason } from './filter';
 import {
   type AbsoluteSeconds,
+  type AttributedSegment,
   absoluteSeconds,
   type Batch,
   type StepWindow,
@@ -27,6 +28,8 @@ export function makeToAbsolute(batch: Batch): (batchTime: number) => AbsoluteSec
 
 export interface AssignResult {
   byStep: Map<string, string[]>;
+  /** The same text, kept per-utterance with its timing rather than joined per step. */
+  segments: AttributedSegment[];
   verbatim: number;
   split: number;
   rejected: number;
@@ -35,11 +38,13 @@ export interface AssignResult {
 export function assignSegments(response: TranscriptionResponse, batch: Batch, steps: StepWindow[]): AssignResult {
   const toAbsolute = makeToAbsolute(batch);
   const byStep = new Map<string, string[]>();
-  const add = (stepId: string, text: string) => {
+  const segments: AttributedSegment[] = [];
+  const add = (stepId: string, text: string, startSec: number, endSec: number) => {
     if (!text) return;
     const existing = byStep.get(stepId);
     if (existing) existing.push(text);
     else byStep.set(stepId, [text]);
+    segments.push({ stepId, rawText: text, startSec, endSec });
   };
 
   let verbatim = 0;
@@ -58,24 +63,30 @@ export function assignSegments(response: TranscriptionResponse, batch: Batch, st
     if (spanned.length <= 1) {
       const step = spanned[0] ?? steps.find((s) => start >= s.from && start <= s.to);
       if (step) {
-        add(step.stepId, segment.text.trim());
+        add(step.stepId, segment.text.trim(), start, end);
         verbatim += 1;
       }
       continue;
     }
 
     split += 1;
-    const grouped = new Map<string, string[]>();
+    const grouped = new Map<string, { words: string[]; from: number; to: number }>();
     for (const word of response.words ?? []) {
       if (word.start < segment.start || word.start > segment.end) continue;
       const at = toAbsolute(word.start);
       const step = steps.find((s) => at >= s.from && at <= s.to) ?? spanned[spanned.length - 1];
       const existing = grouped.get(step.stepId);
-      if (existing) existing.push(word.word.trim());
-      else grouped.set(step.stepId, [word.word.trim()]);
+      if (existing) {
+        existing.words.push(word.word.trim());
+        existing.to = Math.max(existing.to, at);
+      } else {
+        grouped.set(step.stepId, { words: [word.word.trim()], from: at, to: at });
+      }
     }
-    for (const [stepId, words] of grouped) add(stepId, words.join(' ').trim());
+    // A split segment's own bounds cover several steps, so each part reports the span of the
+    // words that landed in it rather than borrowing the whole segment's timing.
+    for (const [stepId, group] of grouped) add(stepId, group.words.join(' ').trim(), group.from, group.to);
   }
 
-  return { byStep, verbatim, split, rejected };
+  return { byStep, segments, verbatim, split, rejected };
 }

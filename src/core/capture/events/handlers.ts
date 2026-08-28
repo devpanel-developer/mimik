@@ -1,4 +1,5 @@
 import PQueue from 'p-queue';
+import type { CaptureTiming } from '@/core/guides/types';
 import { DEFAULT_TARGET_COLOR } from '@/core/screenshot/types';
 import { localStorage } from '@/lib/browser-api';
 import { HoverRing } from '@/lib/hover-ring';
@@ -100,7 +101,12 @@ class CaptureController {
     }
   }
 
-  private capture(action: string, target: HTMLElement, point?: { x: number; y: number }) {
+  private capture(
+    action: string,
+    target: HTMLElement,
+    point?: { x: number; y: number },
+    captureTiming: CaptureTiming = 'after-action',
+  ) {
     const atEvent = freezeRect(target);
     return async () => {
       const elementMeta = extractElementMeta(target, atEvent);
@@ -111,6 +117,7 @@ class CaptureController {
         domContext: extractDOMContext(target, action),
         // Authoritative for this event: the recorder's global URL can belong to another tab.
         eventUrl: location.href,
+        captureTiming,
       });
     };
   }
@@ -177,7 +184,7 @@ class CaptureController {
     if (isNavigatingClick(target)) {
       me.preventDefault();
       me.stopImmediatePropagation();
-      this.enqueue(this.capture('click', target, { x: me.clientX, y: me.clientY }));
+      this.enqueue(this.capture('click', target, { x: me.clientX, y: me.clientY }, 'before-action'));
       const anchor = target.closest('a[href]') as HTMLAnchorElement;
       if (anchor) {
         const href = anchor.href;
@@ -190,12 +197,14 @@ class CaptureController {
       return;
     }
 
-    const task = this.capture('click', target, { x: me.clientX, y: me.clientY });
-
     if (!shouldInterceptClick(target, me)) {
-      this.enqueue(task);
+      // The click already reached the page, so the screenshot shows the state after it.
+      this.enqueue(this.capture('click', target, { x: me.clientX, y: me.clientY }));
       return;
     }
+
+    // Interception captures before the page is allowed to react.
+    const task = this.capture('click', target, { x: me.clientX, y: me.clientY }, 'before-action');
 
     me.preventDefault();
     me.stopImmediatePropagation();

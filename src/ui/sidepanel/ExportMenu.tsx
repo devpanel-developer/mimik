@@ -1,4 +1,4 @@
-import { Download, FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
+import { Braces, Download, FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { downloadBlob, downloadText, safeFilename } from '@/core/export/download';
@@ -6,7 +6,7 @@ import { exportGuideAsHTML } from '@/core/export/html-export';
 import { exportGuideAsMarkdown } from '@/core/export/markdown-export';
 import { exportGuideAsPDF } from '@/core/export/pdf-export';
 import { canExportVideo } from '@/core/export/video-support';
-import { getGuide } from '@/core/guides/service';
+import { getGuide, getNarrationForGuide } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { Button } from '@/ui/components/ui/button';
 
@@ -17,7 +17,7 @@ interface ExportMenuProps {
   screenshots: Map<string, Screenshot>;
 }
 
-type ExportType = 'docx' | 'html' | 'markdown' | 'pdf' | 'video';
+type ExportType = 'docx' | 'html' | 'markdown' | 'pdf' | 'video' | 'rawCapture';
 
 export default function ExportMenu({
   guideId,
@@ -65,6 +65,11 @@ export default function ExportMenu({
       } else if (type === 'docx') {
         const { exportGuideAsDOCX } = await import('@/core/export/docx-export');
         downloadBlob(await exportGuideAsDOCX(guide, steps, screenshots), safeFilename(guide.title, 'docx'));
+      } else if (type === 'rawCapture') {
+        const { exportGuideAsRawCapture } = await import('@/core/export/raw-capture-export');
+        const narration = await getNarrationForGuide(guideId);
+        const json = await exportGuideAsRawCapture(guide, steps, screenshots, {}, narration);
+        downloadText(json, safeFilename(guide.title, 'json'), 'application/json');
       } else if (type === 'markdown') {
         const md = await exportGuideAsMarkdown(guide, steps, screenshots);
         downloadText(md, safeFilename(guide.title, 'md'), 'text/markdown');
@@ -95,6 +100,7 @@ export default function ExportMenu({
     { type: 'html' as const, icon: FileCode, label: i18n.t('exportMenu.html') },
     { type: 'markdown' as const, icon: FileText, label: i18n.t('exportMenu.markdown') },
     { type: 'pdf' as const, icon: FileDown, label: i18n.t('exportMenu.pdf') },
+    { type: 'rawCapture' as const, icon: Braces, label: i18n.t('exportMenu.rawCapture') },
     ...(videoSupported ? [{ type: 'video' as const, icon: Video, label: i18n.t('exportMenu.video') }] : []),
   ];
 

@@ -102,6 +102,7 @@ export async function handleCaptureStep(
     url: resolveEventUrl(data.eventUrl, snap.context.currentUrl),
     timestamp,
     browserContext: buildStepBrowserContext(sender, data.eventUrl),
+    captureTiming: data.captureTiming ?? 'after-action',
     screenshotId,
     elementMeta: data.elementMeta,
     aiPending: willUseAI || narrationCapturing,

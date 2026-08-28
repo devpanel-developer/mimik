@@ -1,7 +1,14 @@
 import { CaptureState } from '@/core/capture/machine';
 import { hasVoiceApiKey, VOICE_KEY_SETTINGS } from '@/core/capture/voice/api-key';
 import { narrationUpdates } from '@/core/capture/voice/narration-updates';
-import { applyNarrationToSteps, findExistingStepIds, getStepsForGuide } from '@/core/guides/service';
+import type { AttributedSegment } from '@/core/capture/voice/types';
+import {
+  applyNarrationToSteps,
+  findExistingStepIds,
+  getStepsForGuide,
+  saveNarrationSegments,
+} from '@/core/guides/service';
+import type { NarrationSegment } from '@/core/guides/types';
 import { localStorage, onMessage as onRuntimeMessage } from '@/lib/browser-api';
 import { logger } from '@/lib/logger';
 import {
@@ -263,6 +270,33 @@ export async function stopVoiceNarration(guideId: string): Promise<void> {
   }
 }
 
+/**
+ * Turn attributed utterances into stored evidence.
+ *
+ * Segments whose step no longer exists are kept with a null stepId rather than discarded: the
+ * trainer still said them, and losing narration because a step was edited away would defeat
+ * the point of storing it separately.
+ */
+function toNarrationRecords(
+  guideId: string,
+  segments: readonly AttributedSegment[],
+  survivingStepIds: readonly string[],
+): NarrationSegment[] {
+  const surviving = new Set(survivingStepIds);
+  const createdAt = Date.now();
+  return segments
+    .filter((segment) => segment.rawText.trim().length > 0)
+    .map((segment, index) => ({
+      id: `${guideId}:${Math.round(segment.startSec * 1000)}:${index}`,
+      guideId,
+      stepId: surviving.has(segment.stepId) ? segment.stepId : null,
+      rawText: segment.rawText,
+      startMs: Math.round(segment.startSec * 1000),
+      endMs: Math.round(segment.endSec * 1000),
+      createdAt,
+    }));
+}
+
 async function applyNarration(guideId: string, result: VoiceResultEvent['result']): Promise<void> {
   const final = transcribingGuideId === guideId;
   try {
@@ -271,6 +305,7 @@ async function applyNarration(guideId: string, result: VoiceResultEvent['result'
     const surviving = await findExistingStepIds(narrated);
     const updates = narrationUpdates(result, surviving);
     await applyNarrationToSteps(updates);
+    await saveNarrationSegments(toNarrationRecords(guideId, result.segments ?? [], surviving));
     const narratedIds = updates.map((update) => update.stepId);
     discardDeferred(guideId, narratedIds);
     recordNarrated(guideId, narratedIds);

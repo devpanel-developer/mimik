@@ -3,7 +3,7 @@ import type { NarrationUpdate } from '@/core/capture/voice/narration-updates';
 import type { ScreenshotEdits } from '@/core/screenshot/types';
 import { db } from './db';
 import { hashPayload } from './snapshot-hash';
-import type { BlockType, CalloutVariant, Guide, Screenshot, Snapshot, Step } from './types';
+import type { BlockType, CalloutVariant, Guide, NarrationSegment, Screenshot, Snapshot, Step } from './types';
 
 export type GuideChangeEvent = { type: 'starred'; id: string; starred: boolean } | { type: 'mutated' };
 
@@ -207,6 +207,21 @@ export async function applyNarrationToSteps(updates: readonly NarrationUpdate[])
     }
   });
   notifyGuidesChanged({ type: 'mutated' });
+}
+
+/**
+ * Store the trainer's utterances as evidence.
+ *
+ * Deliberately separate from `applyNarrationToSteps`: that writes a step description, which a
+ * human or a model may later rewrite. These records must survive that.
+ */
+export async function saveNarrationSegments(segments: readonly NarrationSegment[]): Promise<void> {
+  if (segments.length === 0) return;
+  await db.narration.bulkPut([...segments]);
+}
+
+export async function getNarrationForGuide(guideId: string): Promise<NarrationSegment[]> {
+  return db.narration.where('guideId').equals(guideId).toArray();
 }
 
 export async function applyAiDescription(stepId: string, description: string): Promise<void> {
