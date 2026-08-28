@@ -21,6 +21,18 @@ export type BlockType = 'heading' | 'callout';
 
 export type CalloutVariant = 'info' | 'warning' | 'error' | 'success' | 'custom';
 
+export interface StepBrowserContext {
+  tabId?: number;
+  frameId?: number;
+  windowId?: number;
+  /** URL of the frame the event happened in. */
+  eventUrl?: string;
+  /** URL of the top-level document, when the event came from a subframe. */
+  topLevelUrl?: string;
+  /** Ordering counter for navigations observed in this tab during the recording. */
+  navigationSequence?: number;
+}
+
 export interface Step {
   id: string;
   guideId: string;
@@ -32,6 +44,8 @@ export interface Step {
   screenshotId?: string;
   elementMeta?: ElementMeta;
   inputValue?: string;
+  /** Authoritative per-event browser context; absent on recordings made before WP-03. */
+  browserContext?: StepBrowserContext;
   /** How the captured field was classified. Secret fields never carry an inputValue. */
   inputClassification?: InputClassification;
   descriptionSource?: DescriptionSource;

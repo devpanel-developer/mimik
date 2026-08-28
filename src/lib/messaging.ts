@@ -31,6 +31,8 @@ export interface CaptureStepData {
   action: string;
   elementMeta: ElementMeta;
   domContext?: DOMContext;
+  /** location.href of the frame at the moment of the event. */
+  eventUrl?: string;
 }
 
 export type CaptureStepResponse = { stepId: string } | { ignored: true } | { error: string };

@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import type { CaptureStepData, CaptureStepResponse } from '@/lib/messaging';
 import { getActor } from './actor';
 import { generateAiDescription } from './ai-description';
+import { buildStepBrowserContext, type MessageSenderLike, resolveEventUrl } from './browser-context';
 import { deferDescription, shouldQueueAiDescription } from './deferred-descriptions';
 import { queueDescription } from './description-queue';
 import { flushNarrationForStep, getVoiceUpdate } from './voice';
@@ -67,7 +68,10 @@ async function tryAIDescription(stepId: string, domContext: DOMContext) {
   }
 }
 
-export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureStepResponse> {
+export async function handleCaptureStep(
+  data: CaptureStepData,
+  sender?: MessageSenderLike,
+): Promise<CaptureStepResponse> {
   const snap = getActor().getSnapshot();
   if (snap.value !== CaptureState.RECORDING) return { ignored: true };
 
@@ -95,8 +99,9 @@ export async function handleCaptureStep(data: CaptureStepData): Promise<CaptureS
     index: stepIndex,
     description: buildFallbackDescription(data.action, data.elementMeta),
     action: data.action,
-    url: snap.context.currentUrl,
+    url: resolveEventUrl(data.eventUrl, snap.context.currentUrl),
     timestamp,
+    browserContext: buildStepBrowserContext(sender, data.eventUrl),
     screenshotId,
     elementMeta: data.elementMeta,
     aiPending: willUseAI || narrationCapturing,

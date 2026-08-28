@@ -10,6 +10,7 @@ import {
 import { logger } from '@/lib/logger';
 import { TabMessage } from '@/lib/tab-messages';
 import { getActor, waitUntilReady } from './actor';
+import { recordNavigation } from './browser-context';
 import { injectContentScript, isInjectableTab } from './tab-manager';
 
 export function registerNavigationListeners() {
@@ -19,6 +20,7 @@ export function registerNavigationListeners() {
     const state = getActor().getSnapshot();
     if (state.value === CaptureState.RECORDING) {
       logger.debug('URL changed (navigation) →', details.url);
+      recordNavigation(details.tabId);
       getActor().send({ type: 'URL_CHANGED', url: details.url });
     }
   });
@@ -29,6 +31,7 @@ export function registerNavigationListeners() {
     const state = getActor().getSnapshot();
     if (state.value === CaptureState.RECORDING) {
       logger.debug('URL changed (SPA pushState) →', details.url);
+      recordNavigation(details.tabId);
       getActor().send({ type: 'URL_CHANGED', url: details.url });
     }
   });

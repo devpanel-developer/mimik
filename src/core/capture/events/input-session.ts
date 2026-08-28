@@ -27,6 +27,7 @@ export class InputSession {
       action: 'input',
       elementMeta: extractElementMeta(target, atEvent),
       domContext: extractDOMContext(target, 'input'),
+      eventUrl: location.href,
     });
     if ('stepId' in res) {
       this.stepId = res.stepId;

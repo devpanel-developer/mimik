@@ -109,6 +109,8 @@ class CaptureController {
         action,
         elementMeta: point ? { ...elementMeta, clickPoint: point } : elementMeta,
         domContext: extractDOMContext(target, action),
+        // Authoritative for this event: the recorder's global URL can belong to another tab.
+        eventUrl: location.href,
       });
     };
   }

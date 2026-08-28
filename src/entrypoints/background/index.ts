@@ -188,9 +188,9 @@ export default defineBackground(() => {
 
   onMessage('rewriteSelection', ({ data }) => rewriteSelection(data.text, data.instruction));
 
-  onMessage('captureStep', async ({ data }) => {
+  onMessage('captureStep', async ({ data, sender }) => {
     await waitUntilReady();
-    return handleCaptureStep(data);
+    return handleCaptureStep(data, sender);
   });
 
   onMessage('updateInputStep', async ({ data }) => {
