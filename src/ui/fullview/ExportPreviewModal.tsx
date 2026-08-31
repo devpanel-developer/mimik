@@ -1,4 +1,4 @@
-import { FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
+import { Braces, FileCode, FileDown, FileText, Loader2, Video } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { i18n } from '#imports';
 import { downloadBlob, downloadText, safeFilename } from '@/core/export/download';
@@ -15,6 +15,7 @@ import { exportGuideAsPDF } from '@/core/export/pdf-export';
 import { paginatePreview, withPreviewStyles } from '@/core/export/preview';
 import type { VideoChapter } from '@/core/export/video-export';
 import { canExportVideo, STEP_SECONDS } from '@/core/export/video-support';
+import { getNarrationForGuide } from '@/core/guides/service';
 import type { Guide, Screenshot, Step } from '@/core/guides/types';
 import { Button } from '@/ui/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/ui/dialog';
@@ -32,7 +33,7 @@ interface ExportPreviewModalProps {
   screenshots: Map<string, Screenshot>;
 }
 
-type ExportFormat = 'docx' | 'html' | 'markdown' | 'pdf' | 'video';
+type ExportFormat = 'docx' | 'html' | 'markdown' | 'pdf' | 'video' | 'rawCapture';
 type PreviewMode = 'document' | 'video';
 
 export default function ExportPreviewModal({ open, onOpenChange, guide, steps, screenshots }: ExportPreviewModalProps) {
@@ -139,6 +140,11 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
         downloadText(html, safeFilename(guide.title, 'html'), 'text/html');
       } else if (format === 'pdf') {
         downloadBlob(await exportGuideAsPDF(guide, steps, screenshots, options), safeFilename(guide.title, 'pdf'));
+      } else if (format === 'rawCapture') {
+        const { exportGuideAsRawCapture } = await import('@/core/export/raw-capture-export');
+        const narration = await getNarrationForGuide(guide.id);
+        const json = await exportGuideAsRawCapture(guide, steps, screenshots, {}, narration);
+        downloadText(json, safeFilename(guide.title, 'json'), 'application/json');
       } else if (format === 'docx') {
         const { exportGuideAsDOCX } = await import('@/core/export/docx-export');
         downloadBlob(await exportGuideAsDOCX(guide, steps, screenshots, options), safeFilename(guide.title, 'docx'));
@@ -186,6 +192,7 @@ export default function ExportPreviewModal({ open, onOpenChange, guide, steps, s
     { key: 'docx', icon: FileText, label: i18n.t('exportMenu.docx') },
     { key: 'html', icon: FileCode, label: i18n.t('exportMenu.html') },
     { key: 'markdown', icon: FileText, label: i18n.t('exportMenu.markdown') },
+    { key: 'rawCapture', icon: Braces, label: i18n.t('exportMenu.rawCapture') },
     ...(videoSupported ? [{ key: 'video' as const, icon: Video, label: i18n.t('exportMenu.video') }] : []),
   ];
 
