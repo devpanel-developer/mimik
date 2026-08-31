@@ -86,10 +86,18 @@ export async function exportGuideAsRawCapture(
   const sanitizedSteps = steps.map((step) => sanitizeStep(step, exportNotes));
 
   const exported: RawCaptureScreenshot[] = [];
+  let missingMetadata = 0;
   for (const step of sanitizedSteps) {
     if (!step.screenshotId) continue;
-    const shot = screenshots.get(step.screenshotId);
-    if (!shot) continue;
+    // `getGuide` keys this map by stepId, not by screenshot id.
+    const shot = screenshots.get(step.id);
+    if (!shot) {
+      // The step references a screenshot whose row was not loaded. Emit what the step itself
+      // knows rather than dropping the evidence reference entirely and saying nothing.
+      missingMetadata++;
+      exported.push({ id: step.screenshotId, stepId: step.id });
+      continue;
+    }
 
     const entry: RawCaptureScreenshot = {
       id: shot.id,
@@ -109,6 +117,11 @@ export async function exportGuideAsRawCapture(
 
   if (!options.includeScreenshotData && exported.length > 0) {
     exportNotes.push('screenshot image data was not included; only metadata was exported');
+  }
+  if (missingMetadata > 0) {
+    exportNotes.push(
+      `${missingMetadata} screenshots were referenced by a step but their metadata could not be loaded; only the id was exported`,
+    );
   }
 
   const payload: RawCaptureExport = {

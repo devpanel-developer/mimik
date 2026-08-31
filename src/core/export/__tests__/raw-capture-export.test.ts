@@ -69,9 +69,11 @@ describe('raw capture export', () => {
   });
 
   it('exports screenshot metadata without image data by default', async () => {
+    // getGuide keys this map by stepId, not by screenshot id — keying it the other way was a
+    // real bug that silently dropped every screenshot from the export.
     const screenshots = new Map<string, Screenshot>([
       [
-        'shot-1',
+        'step-1',
         {
           id: 'shot-1',
           stepId: 'step-1',
@@ -87,6 +89,25 @@ describe('raw capture export', () => {
     expect(payload.screenshots[0]).toMatchObject({ id: 'shot-1', width: 1280 });
     expect(payload.screenshots[0].dataUrl).toBeUndefined();
     expect(payload.exportNotes.join(' ')).toContain('only metadata');
+  });
+
+  it('still exports an evidence reference when screenshot metadata cannot be loaded', async () => {
+    const payload = await exportOf([step({ screenshotId: 'shot-1' })], new Map());
+
+    expect(payload.screenshots).toEqual([{ id: 'shot-1', stepId: 'step-1' }]);
+    expect(payload.exportNotes.join(' ')).toContain('metadata could not be loaded');
+  });
+
+  it('exports one screenshot per step that has one', async () => {
+    const screenshots = new Map<string, Screenshot>([
+      ['step-1', { id: 'shot-1', stepId: 'step-1', mimeType: 'image/jpeg' } as Screenshot],
+      ['step-2', { id: 'shot-2', stepId: 'step-2', mimeType: 'image/jpeg' } as Screenshot],
+    ]);
+    const payload = await exportOf(
+      [step({ screenshotId: 'shot-1' }), step({ id: 'step-2', index: 1, screenshotId: 'shot-2' })],
+      screenshots,
+    );
+    expect(payload.screenshots.map((s: { id: string }) => s.id)).toEqual(['shot-1', 'shot-2']);
   });
 
   it('says nothing about screenshots when there are none', async () => {
